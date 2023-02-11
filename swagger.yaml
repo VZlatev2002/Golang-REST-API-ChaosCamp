@@ -1,0 +1,19 @@
+basePath: /
+consumes:
+    - applications/json
+info:
+    description: Documentation for BillSplitter API
+    title: of BilSplittter API
+    version: 1.0.0
+paths:
+    /signup:
+        post:
+            description: Signups a user, checks if the user exists and return a cookie with jwt token
+            operationId: SignupUser
+            tags:
+                - signup
+produces:
+    - application/json
+schemes:
+    - http
+swagger: "2.0"
