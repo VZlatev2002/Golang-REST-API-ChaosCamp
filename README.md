@@ -32,7 +32,7 @@ To build the project run `go build -o .` and to run `/.bill-splitter`
 
 ## Example database scheme
 
-![DB Scheme](/BillSplitter Golang.png)
+![DB Scheme](/BillSplitter%20Golang.png)
 
 ## License
 
