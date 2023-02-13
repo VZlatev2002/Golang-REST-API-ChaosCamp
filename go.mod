@@ -1,4 +1,4 @@
-module github.com/velizarzlatev/final_project
+module github.com/velizarzlatev/bill-splitter
 
 go 1.19
 

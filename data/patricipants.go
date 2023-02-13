@@ -11,7 +11,7 @@ type ParticipantDB struct {
 	ID int `sql:"id"`
 	Name string `sql:"email_name"`
 	BillSplitID int `sql:"billsplit_id"`
-	UserID int `sql:"user_id"`
+	UserID sql.NullInt64 `sql:"user_id"`
 	CreatedAt time.Time `sql:"created_at"`
 }
 

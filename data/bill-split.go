@@ -1,12 +1,11 @@
 package data
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/velizarzlatev/final_project/models"
+	"github.com/velizarzlatev/bill-splitter/models"
 )
 
 type DBBillSplit struct {
@@ -34,52 +33,66 @@ func fromModelBill(bs models.BillSplit) DBBillSplit {
 	}
 }
 
+// Creates a new BillSplit and returns the models.BillSplit struct by querying the database for the name
 func (db *BillSplitterDB) CreateBillSplit(bs models.BillSplit) (billsplit models.BillSplit, err error) {
 	dbBill := fromModelBill(bs)	
 	_, err = db.conn.Exec("insert into billsplit (name, created_at) values (?, ?)", bs.Name, time.Now())
 	if err != nil {
-		return bs, fmt.Errorf("Create billSplit failed: %v", err)
+		log.Println("Error inserting billsplit into database: ", err)
+		return bs, err
 	}
 	// use QueryRow to return a row and scan the returned id into the Session struct
 	err = db.conn.QueryRow("SELECT * FROM billsplit WHERE name = ?", bs.Name).Scan(&dbBill.ID, &dbBill.Name, &dbBill.CreatedAt)
+	if err != nil {
+		return bs, fmt.Errorf("Selecting bill split failed: %v", err)
+	}
 	
-
+	log.Println(dbBill.ToModelBill())
 	return dbBill.ToModelBill(), err
 }
 
-func (db *BillSplitterDB) CreateParticipants(ctx context.Context, billSplit models.BillSplit) (err error) {	
+func (db *BillSplitterDB) CreateParticipants(billSplit models.BillSplit) (bs models.BillSplit, err error) {	
 	// stms, err := db.conn.PrepareContext(ctx, "select * from users where user_id = ?", billSplit.)
-
-
+	log.Println("CreateParticipants")
+	bs.ID = billSplit.ID
+	bs.Name = billSplit.Name
+	parts := []models.Participant{}
 	for _, participant := range billSplit.Participants {
-		
-		row := db.conn.QueryRowContext(ctx, "select id from user where email = ?", participant.Email_name)
+		part := models.Participant{}
+		row := db.conn.QueryRow("select id from user where email = ?", participant.Email_name)
 		if err != nil {
-			log.Println("error duing selection from user", err)
-			return err
+			log.Println("error duing selecting participant id from user", err)
 		}
 		err = row.Scan(&participant.User_id)
+		if err != nil {
+			log.Println("no such user, participant without user_id")
+		}
 		
 		log.Println(participant)
 		if participant.User_id != 0 {
-			_, err := db.conn.ExecContext(ctx, "insert into participant(email_name, billsplit_id, user_id, created_at) values (?, ?, ?, ?)", &participant.Email_name, billSplit.ID, &participant.User_id, time.Now())
+			_, err := db.conn.Exec("insert into participant(email_name, billsplit_id, user_id, created_at) values (?, ?, ?, ?)", &participant.Email_name, billSplit.ID, &participant.User_id, time.Now())
 			if err != nil {
 				log.Println("error duing insertion to participant with know user_id", err)
-				return err
+				return bs,err
 			}
 		} else {
-			_, err = db.conn.ExecContext(ctx, "insert into participant(email_name, billsplit_id, created_at) values (?, ?, ?)", &participant.Email_name, billSplit.ID, time.Now())
+			_, err = db.conn.Exec("insert into participant(email_name, billsplit_id, created_at) values (?, ?, ?)", &participant.Email_name, billSplit.ID, time.Now())
 			if err != nil {
 				log.Println("error duing insertion to participant with not known user_id", err)
-				return err
+				return bs,err
 			}
 		}
-		
-
+		err = db.conn.QueryRow("SELECT email_name FROM participant WHERE email_name = ?", participant.Email_name).Scan(&part.Email_name)
+		parts = append(parts, part)
+		if err != nil {
+			return bs, fmt.Errorf("Selecting bill split failed: %v", err)
+		}
 	}
-	return  err
+	bs.Participants = parts
+	return bs, err
+	}
 
-}
+
 
 func (db *BillSplitterDB) BillSplitByName(name string) (billsplit DBBillSplit, err error) {
 	row := db.conn.QueryRow("SELECT * FROM billsplit WHERE name = ?", name)

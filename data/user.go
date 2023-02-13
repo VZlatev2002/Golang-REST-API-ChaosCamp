@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/velizarzlatev/final_project/models"
+	"github.com/velizarzlatev/bill-splitter/models"
 )
 
 type DBUser struct {
