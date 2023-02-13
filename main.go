@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/velizarzlatev/final_project/handlers"
+	"github.com/velizarzlatev/bill-splitter/handlers"
 )
 
 func main() {

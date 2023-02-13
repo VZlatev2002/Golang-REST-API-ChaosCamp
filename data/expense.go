@@ -31,17 +31,15 @@ func (db *BillSplitterDB) AddParticipants(names []string, billsplit_id int, expe
 	sqlStr = strings.TrimSuffix(sqlStr, ",")
 
 	
-	//prepare the statement
 	stmt, _ := db.conn.Prepare(sqlStr)
 
-	
-	//format all vals at once
 	_, err = stmt.Exec(vals...)
 	return
 }
 
 func (db *BillSplitterDB) CreateExpense(name string, amount float64, payer string, billsplitid int) (expense ExpenseDB, err error){
 	//defer db.Close()
+	log.Println("CreateExpense", name, amount, payer, billsplitid)
 	participant, err := db.ParticipantByName(payer, billsplitid)
 	if err != nil {
 		log.Println("Payer is not registered participant in a billsplit", err)
@@ -59,8 +57,7 @@ func (db *BillSplitterDB) CreateExpense(name string, amount float64, payer strin
 
 		return
 	}
-	log.Println(expense)
-	return
+	return expense, err
 }
 
 func (db *BillSplitterDB) ExpenseByID(expense_id int) (expense ExpenseDB, err error) {

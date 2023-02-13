@@ -28,9 +28,9 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"github.com/velizarzlatev/final_project/data"
-	"github.com/velizarzlatev/final_project/helpers"
-	"github.com/velizarzlatev/final_project/models"
+	"github.com/velizarzlatev/bill-splitter/data"
+	"github.com/velizarzlatev/bill-splitter/helpers"
+	"github.com/velizarzlatev/bill-splitter/models"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -52,7 +52,7 @@ type Database interface {
 
 	CreateBillSplit(bs models.BillSplit) (billsplit models.BillSplit, err error)
 
-	CreateParticipants(ctx context.Context, billSplit models.BillSplit) (err error)
+	CreateParticipants(billSplit models.BillSplit) (bs models.BillSplit, err error)
 
 	ParticipantByName(name string, billSplit_id int) (participant data.ParticipantDB, err error)
 
@@ -96,6 +96,7 @@ func Initialize() (a *App) {
 	Router := mux.NewRouter()
 	return NewApp(db, Router)
 }
+
 
 // swagger:route POST /signup signup SignupUser
 // Signups a user, checks if the user exists and return a cookie with jwt token
@@ -143,21 +144,20 @@ func (a *App) GetAllUsers(writer http.ResponseWriter, request *http.Request){
 // NewBillSplit creates a new billSplit in the database
 func (a *App) NewBillSplit(writer http.ResponseWriter, request *http.Request){
 	log.Println("NewBillSplit")
-	ctx := context.Background()
 	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	
 	bs := models.BillSplit{} //omit billsplitId here
 
 	err := json.NewDecoder(request.Body).Decode(&bs)
 	if err != nil {
-		helpers.ErrorMessage(writer, request, "Cannot create new BillSplit")
+		helpers.ErrorMessage(writer, request, "Wrong request body")
 	}
 	billSplitToParticipants, err := a.db.CreateBillSplit(bs)
 	if err != nil {
-		helpers.ErrorMessage(writer, request, "Cannot get threads")
+		helpers.ErrorMessage(writer, request, "Cannot create new BillSplit")
 	}
 	log.Println("Created new BillSplit", billSplitToParticipants)
-	err = a.db.CreateParticipants(ctx, billSplitToParticipants)
+	bs, err = a.db.CreateParticipants(billSplitToParticipants)
 	if err != nil {
 		helpers.ErrorMessage(writer, request, "Cannot create new BillSplit")
 	} else {
